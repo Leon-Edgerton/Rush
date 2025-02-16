@@ -2,40 +2,69 @@ using UnityEngine;
 
 public class PlayerMovement : MonoBehaviour
 {
-
+    private Rigidbody rb;
     private InputManager inputManager;
 
-    private Rigidbody rb;
-
-    private Vector3 playerVelocity;
     public float speed = 5f;
+    public float jumpForce = 7f;
+    public LayerMask groundLayer;
 
-    // Start is called once before the first execution of Update after the MonoBehaviour is created
+    private bool isGrounded;
+
     void Start()
     {
         rb = GetComponent<Rigidbody>();
         inputManager = GetComponent<InputManager>();
     }
 
-    // Update is called once per frame
-    void Update()
+    private void OnCollisionStay(Collision collision)
     {
-        
+        // Check if the collided object is in the groundLayer
+        if (((1 << collision.gameObject.layer) & groundLayer) != 0)
+        {
+            isGrounded = true;
+        }
     }
 
-
-    public void ProcessMove(Vector2 Input)
+    private void OnCollisionExit(Collision collision)
     {
-        Vector3 moveDirection = new Vector3(Input.x, 0f, Input.y);
+        // When exiting the collision with ground, set isGrounded to false
+        if (((1 << collision.gameObject.layer) & groundLayer) != 0)
+        {
+            isGrounded = false;
+        }
+    }
 
-        //Apply movement
+    public void ProcessMove(Vector2 input)
+    {
+        Transform camTransform = Camera.main.transform;
+        Vector3 forward = camTransform.forward;
+        Vector3 right = camTransform.right;
+
+        forward.y = 0f;
+        right.y = 0f;
+        forward.Normalize();
+        right.Normalize();
+
+        Vector3 moveDirection = forward * input.y + right * input.x;
+
         rb.linearVelocity = new Vector3(moveDirection.x * speed, rb.linearVelocity.y, moveDirection.z * speed);
 
-        // Rotate player to face movement direction
-        if (moveDirection.sqrMagnitude > 0.01f) // Prevents snapping to zero direction
+        if (moveDirection.sqrMagnitude > 0.01f)
         {
-            Quaternion targetRotation = Quaternion.LookRotation(moveDirection);// Tells player to look in the direction its moving
-            rb.rotation = Quaternion.Slerp(rb.rotation, targetRotation, Time.fixedDeltaTime * 10f); // Smooth rotation and rotation speed
+            Quaternion targetRotation = Quaternion.LookRotation(moveDirection);
+            rb.rotation = Quaternion.Slerp(rb.rotation, targetRotation, Time.fixedDeltaTime * 10f);
+        }
+    }
+
+    public void Jump()
+    {
+        if (isGrounded)
+        {
+            rb.linearVelocity = new Vector3(rb.linearVelocity.x, jumpForce, rb.linearVelocity.z);
+            isGrounded = false; // Prevents double jumping until OnCollisionStay is called again
         }
     }
 }
+
+

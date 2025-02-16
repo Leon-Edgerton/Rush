@@ -1,4 +1,6 @@
+using Unity.Cinemachine;
 using UnityEngine;
+using UnityEngine.InputSystem;
 
 public class InputManager : MonoBehaviour
 {
@@ -14,7 +16,14 @@ public class InputManager : MonoBehaviour
         playerInput = new PlayerInput();
         onFoot = playerInput.OnFoot;
 
+        onFoot.Jump.performed += OnJumpPerformed;
+
         movement = GetComponent<PlayerMovement>();
+    }
+
+    private void OnJumpPerformed(InputAction.CallbackContext obj)
+    {
+        movement.Jump();
     }
 
     void FixedUpdate()
@@ -29,6 +38,7 @@ public class InputManager : MonoBehaviour
 
     private void OnDisable()
     {
+        onFoot.Jump.performed -= OnJumpPerformed;
         onFoot.Disable();
     }
 
