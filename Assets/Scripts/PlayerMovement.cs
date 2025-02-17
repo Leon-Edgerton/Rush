@@ -64,6 +64,7 @@ public class PlayerMovement : MonoBehaviour
             rb.linearVelocity = new Vector3(rb.linearVelocity.x, jumpForce, rb.linearVelocity.z);
             isGrounded = false; // Prevents double jumping until OnCollisionStay is called again
         }
+
     }
 }
 
