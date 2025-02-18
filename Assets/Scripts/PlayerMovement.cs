@@ -1,3 +1,5 @@
+using System;
+using Unity.VisualScripting;
 using UnityEngine;
 
 public class PlayerMovement : MonoBehaviour
@@ -11,11 +13,17 @@ public class PlayerMovement : MonoBehaviour
 
 
     private bool isGrounded;
+    [SerializeField] private float rotationScalar;
+    private Transform _camTransform;
+    private Quaternion _targetRotation;
+    private Vector3 _moveDirection;
+    private const float SmallFloat = 0.001f;
 
     void Start()
     {
         rb = GetComponent<Rigidbody>();
         inputManager = GetComponent<InputManager>();
+        _camTransform = Camera.main.transform;
     }
 
     private void OnCollisionStay(Collision collision)
@@ -36,6 +44,16 @@ public class PlayerMovement : MonoBehaviour
         }
     }
 
+    private void Update()
+    {
+        // Prevent Look rotation viewing vector is zero
+        if (_moveDirection == Vector3.zero)
+            return;
+        
+        var desiredRotation = Quaternion.LookRotation(_moveDirection);
+        _targetRotation = Quaternion.Slerp(rb.rotation, desiredRotation, Time.deltaTime * rotationScalar);
+    }
+
     public void ProcessMove(Vector2 input)
     {
         Transform camTransform = Camera.main.transform;
@@ -47,25 +65,21 @@ public class PlayerMovement : MonoBehaviour
         forward.Normalize();
         right.Normalize();
 
-        Vector3 moveDirection = forward * input.y + right * input.x;
+        _moveDirection = forward * input.y + right * input.x;
 
-        rb.linearVelocity = new Vector3(moveDirection.x * speed, rb.linearVelocity.y, moveDirection.z * speed);
-
-        if (moveDirection.sqrMagnitude > 0.01f)
-        {
-            Quaternion targetRotation = Quaternion.LookRotation(moveDirection);
-            transform.rotation = Quaternion.Slerp(transform.rotation, targetRotation, Time.fixedDeltaTime * 10f);
-        }
+        rb.linearVelocity = new Vector3(_moveDirection.x * speed, rb.linearVelocity.y, _moveDirection.z * speed);
+        rb.MoveRotation(_targetRotation.normalized);
     }
 
     public void Jump()
     {
         if (isGrounded)
         {
-            rb.linearVelocity = new Vector3(rb.linearVelocity.x, jumpForce, rb.linearVelocity.z);
+            var linearVelocity = rb.linearVelocity;
+            linearVelocity = new Vector3(linearVelocity.x, jumpForce, linearVelocity.z);
+            rb.linearVelocity = linearVelocity;
             isGrounded = false; // Prevents double jumping until OnCollisionStay is called again
         }
-
     }
 }
 

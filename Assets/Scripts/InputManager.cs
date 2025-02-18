@@ -19,6 +19,7 @@ public class InputManager : MonoBehaviour
         onFoot.Jump.performed += OnJumpPerformed;
 
         movement = GetComponent<PlayerMovement>();
+        Cursor.lockState = CursorLockMode.Locked;
     }
 
     private void OnJumpPerformed(InputAction.CallbackContext obj)
@@ -28,7 +29,7 @@ public class InputManager : MonoBehaviour
 
     void FixedUpdate()
     {
-        movement.ProcessMove(onFoot.Movement.ReadValue<Vector2>());
+        movement.ProcessMove(onFoot.Movement.ReadValue<Vector2>().normalized);
     }
 
     private void OnEnable()
